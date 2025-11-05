@@ -1,5 +1,5 @@
 [project]
-name = "corso-agenti-dmi"
+name = "ai-multiagents-architectures"
 version = "0.1.0"
 description = ""
 authors = [
@@ -8,15 +8,18 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.11,<4.0.0"
 dependencies = [
-    "marimo (>=0.13.11,<0.14.0)",
-    "langchain-anthropic (>=0.3.13,<0.4.0)",
-    "langgraph (>=0.4.5,<0.5.0)",
-    "langgraph-swarm (>=0.0.11,<0.0.12)",
-    "langgraph-supervisor (>=0.0.23,<0.0.24)",
-    "langchain (>=0.3.25,<0.4.0)",
-    "langchain-community (>=0.3.24,<0.4.0)",
-    "duckduckgo-search (>=8.0.2,<9.0.0)",
-    "mlflow (>=2.22.0,<3.0.0)"
+    "marimo (>=0.17.6,<0.18.0)",
+    "langgraph (>=1.0.2,<2.0.0)",
+    "langchain-anthropic (>=1.0.1,<2.0.0)",
+    "langgraph-swarm @ git+https://github.com/langchain-ai/langgraph-swarm-py.git@mdrxy/lift-deps",
+    "langchain-openai (>=1.0.2,<2.0.0)",
+    "langgraph-supervisor (>=0.0.30,<0.0.31)",
+    "duckduckgo-search (>=8.1.1,<9.0.0)",
+    "mlflow (>=3.5.1,<4.0.0)",
+    "langchain (>=1.0.3,<2.0.0)",
+    "langchain-community (>=0.4.1,<0.5.0)",
+    "ddgs (>=9.7.0,<10.0.0)"
+
 ]
 
 [tool.poetry]

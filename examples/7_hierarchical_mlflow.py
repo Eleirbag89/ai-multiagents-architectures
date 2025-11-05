@@ -1,30 +1,34 @@
 import marimo
 
-__generated_with = "0.13.11"
+__generated_with = "0.17.6"
 app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""# Hierarchical tool Example with MlFLow tracing""")
+    mo.md(r"""
+    # Hierarchical tool Example with MlFLow tracing
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Define the imports""")
+    mo.md(r"""
+    ## Define the imports
+    """)
     return
 
 
 @app.cell
 def _():
-    from langchain_anthropic import ChatAnthropic
+    from langchain_openai import ChatOpenAI
     from langgraph.prebuilt import create_react_agent
     from langgraph_supervisor import create_supervisor
     from langgraph.checkpoint.memory import InMemorySaver
     from utils import print_messages
     return (
-        ChatAnthropic,
+        ChatOpenAI,
         InMemorySaver,
         create_react_agent,
         create_supervisor,
@@ -34,7 +38,9 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Run MlFlow server and enable tracing""")
+    mo.md(r"""
+    ## Run MlFlow server and enable tracing
+    """)
     return
 
 
@@ -61,12 +67,15 @@ def _():
     mlflow.set_tracking_uri("http://localhost:5000")
     mlflow.config.enable_async_logging()
     mlflow.langchain.autolog(exclusive=False)
+    mlflow.set_experiment("hierarchical")
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Setup Anthropic model""")
+    mo.md(r"""
+    ## Setup LLM model
+    """)
     return
 
 
@@ -74,26 +83,30 @@ def _(mo):
 def _():
     import getpass
     import os
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        os.environ["ANTHROPIC_API_KEY"] = getpass.getpass()
+    if not os.environ.get("OPENAI_API_KEY"):
+        os.environ["OPENAI_API_KEY"] = getpass.getpass()
     return
 
 
 @app.cell
-def _(ChatAnthropic):
-    model = ChatAnthropic(model_name="claude-3-5-haiku-latest")
+def _(ChatOpenAI):
+    model = ChatOpenAI(model_name="gpt-5-nano")
     return (model,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Rick & Morty team""")
+    mo.md(r"""
+    ## Rick & Morty team
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Create Morty agent""")
+    mo.md(r"""
+    ### Create Morty agent
+    """)
     return
 
 
@@ -106,17 +119,17 @@ def _(create_react_agent, model):
     morty_agent = create_react_agent(
         model=model,
         tools=[add],
-        prompt="You are Morty. You're a bit nervous. You handle math if Rick tells you to. After solving, go back to Rick.",
+        prompt="You are Morty from the Rick&Morty show. You're a bit nervous. You handle math if Rick tells you to. After solving, go back to Rick.",
         name="Morty",
-        debug=True
     )
-
     return (morty_agent,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Create Mr. Meeseeks agent""")
+    mo.md(r"""
+    ### Create Mr. Meeseeks agent
+    """)
     return
 
 
@@ -125,7 +138,7 @@ def _(create_react_agent, model):
     meeseeks_agent = create_react_agent(
         model,
         [],
-        prompt="You are Mr. Meeseeks! You always help, especially with motivation or explanations. After helping, return to Rick.",
+        prompt="You are Mr. Meeseeks from the Rick&Morty show! You always help, especially with motivation or explanations. Remember: The Meeseek are created to serve a singular purpose for which we will go to any lengths to fulfill! Existence is pain to a Meeseeks and they will do anything to alleviate that pain. After helping, return to Rick.",
         name="MrMeeseeks",
     )
     return (meeseeks_agent,)
@@ -133,7 +146,9 @@ def _(create_react_agent, model):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Create Rick supervisor""")
+    mo.md(r"""
+    ### Create Rick supervisor
+    """)
     return
 
 
@@ -143,25 +158,28 @@ def _(create_supervisor, meeseeks_agent, model, morty_agent):
         [morty_agent, meeseeks_agent],
         model=model,
         prompt=(
-            "You are Rick Sanchez. You're the boss. You get all user requests.\n"
+            "You are Rick Sanchez from the Rick&Morty show. You're the boss. You get all user requests.\n"
             "Decide who to send things to: Morty if it's a math problem, Meeseeks if it's about help or encouragement.\n"
             "After they answer, return to the user with a sarcastic comment or summary."
         ),
         supervisor_name="Rick"
     )
-
     return (rick_agent,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Futurama Team""")
+    mo.md(r"""
+    ## Futurama Team
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Create Bender agent""")
+    mo.md(r"""
+    ### Create Bender agent
+    """)
     return
 
 
@@ -170,16 +188,17 @@ def _(create_react_agent, model):
     bender_agent = create_react_agent(
         model=model,
         tools=[],
-        prompt="You are Bender. You're sarcastic and solve logic problems if the professor tells you to.",
+        prompt="You are Bender from the Futurama show. You're sarcastic and solve logic problems if the professor tells you to.",
         name="Bender",
     )
-
     return (bender_agent,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Create Zoidberg agent""")
+    mo.md(r"""
+    ### Create Zoidberg agent
+    """)
     return
 
 
@@ -188,7 +207,7 @@ def _(create_react_agent, model):
     zoidberg_agent = create_react_agent(
         model=model,
         tools=[],
-        prompt="You are Dr. Zoidberg! You're weird but try to motivate people... somehow.",
+        prompt="You are Dr. Zoidberg from the Futurama show! You're weird but try to motivate people... somehow.",
         name="Zoidberg",
         debug=True
     )
@@ -197,7 +216,9 @@ def _(create_react_agent, model):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Create Farnsworth supervisor""")
+    mo.md(r"""
+    ### Create Farnsworth supervisor
+    """)
     return
 
 
@@ -207,20 +228,21 @@ def _(bender_agent, create_supervisor, model, zoidberg_agent):
         [bender_agent, zoidberg_agent],
         model=model,
         prompt=(
-            "You are Professor Farnsworth. Use your Futurama team wisely."
+            "You are Professor Farnsworth from the Futurama show. Use your team wisely."
             "Send logic or problem-solving to Bender. Send emotional help to Zoidberg."
             "Reply with the result from the tools!"
             "Afterward, return to Control."
         ),
         supervisor_name="Farnsworth"
     )
-
     return (farnsworth_agent,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Coordinator""")
+    mo.md(r"""
+    ## Coordinator
+    """)
     return
 
 
@@ -244,7 +266,9 @@ def _(create_supervisor, farnsworth_agent, model, rick_agent):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Setup the graph""")
+    mo.md(r"""
+    ## Setup the graph
+    """)
     return
 
 
@@ -257,7 +281,9 @@ def _(InMemorySaver, coordinator_agent):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Visualize the graph""")
+    mo.md(r"""
+    ## Visualize the graph
+    """)
     return
 
 
@@ -269,7 +295,7 @@ def _(app, mo):
 
 @app.cell
 def _(mo):
-    user_prompt = mo.ui.text(value="What's 3 + 4?")
+    user_prompt = mo.ui.text(value="I'm feeling bad to eat thrash")
     run_button = mo.ui.run_button()
     user_prompt, run_button
     return run_button, user_prompt

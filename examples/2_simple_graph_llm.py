@@ -1,41 +1,44 @@
 import marimo
 
-__generated_with = "0.13.11"
+__generated_with = "0.17.6"
 app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Simple Graph LLM Example
     This is a simple example of a LangGraph that demonstrates how to create a graph with conditional edges and how to invoke it with different inputs using LLMs.
 
-    The graph consists of two nodes: "_greeting_" and "_emoji_". 
+    The graph consists of two nodes: "_greeting_" and "_emoji_".
 
     The "_greeting_" node generates a greeting message based on the input name, and the "_emoji_" node appends an emoji to the text.
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Define the imports""")
+    mo.md(r"""
+    ## Define the imports
+    """)
     return
 
 
 @app.cell
 def _():
-    from langgraph.graph import Graph, START, END
-    from langchain_anthropic import ChatAnthropic
+    from langgraph.graph import StateGraph, START, END
+    from langchain_openai import ChatOpenAI
     import json
-    return ChatAnthropic, END, Graph, START, json
+    from typing import TypedDict, Optional, Any, Dict
+    return ChatOpenAI, END, START, StateGraph, TypedDict, json
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Setup Anthropic model""")
+    mo.md(r"""
+    ## Setup LLM model
+    """)
     return
 
 
@@ -43,131 +46,181 @@ def _(mo):
 def _():
     import getpass
     import os
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        os.environ["ANTHROPIC_API_KEY"] = getpass.getpass()
+    if not os.environ.get("OPENAI_API_KEY"):
+        os.environ["OPENAI_API_KEY"] = getpass.getpass()
     return
 
 
 @app.cell
-def _(ChatAnthropic):
-    model = ChatAnthropic(model_name="claude-3-5-haiku-latest")
+def _(ChatOpenAI):
+    model = ChatOpenAI(model_name="gpt-5-nano")
     return (model,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    #Define the state
+    """)
+    return
+
+
+@app.cell
+def _(TypedDict):
+    class State(TypedDict, total=False):
+        name_input: str
+        text: str
+        add_emoji: bool
+    return (State,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Define the greeting node""")
+    mo.md(r"""
+    ## Define the greeting node
+    """)
     return
 
 
 @app.cell
-def _(json, model):
-    # Function to create the greeting
-    # Inputs is the input of the compiled graph invoke, because it is the first node
-    def greeting_node(inputs):
-        name_input = inputs.get("name_input")
+def _(State, json, model):
+    def greeting_node(state: State) -> State:
+        name_input = state.get("name_input", "studente")
 
-        prompt = ('Rispondi usando questa struttura di JSON: { "text": "Messaggio generato", "add_emoji": "boolean"}'
-                f"Genera un messaggio di saluto per lo studente {name_input} che sta frequentando il corso di Aitho sugli agenti e se si chiama Gabriele, setta il flag 'add_emoji' a true.")
-        messages = [
-            ("human", prompt),
-        ]
+        prompt = (
+            'Rispondi usando questa struttura di JSON: '
+            '{ "text": "Messaggio generato", "add_emoji": "boolean" } '
+            f'Genera un messaggio di saluto per {name_input} che sta partecipando alla DevFest Catania 2025 al talk Orchestrare l\'intelligenza - esplorando le principali architetture multi-agente per l\'AI'
+            "e se si chiama Gabriele, setta il flag 'add_emoji' a true."
+        )
+        messages = [("human", prompt)]
+
         response = model.invoke(messages)
-        return json.loads(response.content)
+        content = getattr(response, "content", None)
+        try:
+            parsed = json.loads(content)
+            return parsed
+        except json.JSONDecodeError:
+            pass
+
+        return {"text": "", "add_emoji": False}
     return (greeting_node,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Define the emoji node""")
+    mo.md(r"""
+    ## Define the emoji node
+    """)
     return
 
 
 @app.cell
-def _(model):
-    # Function to add emoji to the text
-    # Inputs is the *output* of the previous node
-    def emoji_node(inputs):
-        text = inputs.get("text", "")
-        print("Original message: ", text)
-        prompt = (f"Aggiungi una emoji super mega swag con rizz al seguente testo '{text}'."
-                  "IMPORTANTE: rispondi solo con il testo e l'emoji, non aggiungere altro!")
-        messages = [
-            ("human", prompt),
-        ]
+def _(State, model):
+    def emoji_node(state: State) -> State:
+        """
+        Aggiunge un'emoji al testo presente nello state.
+        Restituisce il frammento di stato aggiornato {"text": "<testo+emoji>"}.
+        """
+        text = state.get("text", "")
+        print("Original message:", text)
+
+        prompt = (
+            f"Aggiungi una emoji super mega swag con rizz al seguente testo: '{text}'. "
+            "IMPORTANTE: rispondi solo con il testo e l'emoji, non aggiungere altro!"
+        )
+        messages = [("human", prompt)]
         response = model.invoke(messages)
-        return {"text": response.content}
+        content = getattr(response, "content", None)
+        if content is None:
+            content = str(response)
+
+        # restituiamo il testo aggiornato (soprascriviamo text)
+        return {"text": content, "add_emoji": False}
     return (emoji_node,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Define the conditional edge to choose the next node to execute
     If the input contains the attribute "add_emoji" sets to True we execute the _emoji_ node next, otherwise we terminate the graph execution in the _END_ node
-    """
-    )
-    return
-
-
-@app.function
-# Function to determine the next node based on the input
-def next_node_after_greeting(inputs):
-    # If the input contains add_emoji to True, go to the "emoji" node
-    if inputs.get("add_emoji", False):
-        return "if add_emoji"
-    # Otherwise, go to the END node
-    # END is a special node that indicates the end of the graph. If it's missing, the graph will not return anything.
-    return "else"
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""## Let's create the graph""")
+    """)
     return
 
 
 @app.cell
-def _(END, Graph, START, emoji_node, greeting_node):
-    graph = Graph()
-
-    graph.add_node("greeting", greeting_node)
-    graph.add_node("emoji", emoji_node)
-
-    graph.add_edge(START, "greeting")
-    # or graph.set_entry_point("greeting")
-    graph.add_edge("emoji", END) 
-    # or graph.set_finish_point("emoji")
-
-    # Add a conditional edge from the "greeting" node to the node name returned by the function an mapped by path_map
-    graph.add_conditional_edges("greeting", next_node_after_greeting, path_map={
-        "if add_emoji": "emoji",
-        "else": END
-    })
-    return (graph,)
+def _(State):
+    # Funzione di instradamento dopo il nodo di greeting
+    def next_node_after_greeting(state: State) -> str:
+        # ritorna la 'path key' che viene mappata a un nodo (path_map sotto)
+        if state.get("add_emoji", False):
+            return "if add_emoji"
+        return "else"
+    return (next_node_after_greeting,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
+    ## Let's create the graph
+    """)
+    return
+
+
+@app.cell
+def _(
+    END,
+    START,
+    State,
+    StateGraph,
+    emoji_node,
+    greeting_node,
+    next_node_after_greeting,
+):
+    g_builder = StateGraph(State)
+
+
+    # aggiungo i nodi
+    g_builder.add_node("greeting", greeting_node)
+    g_builder.add_node("emoji", emoji_node)
+
+    # punti di ingresso/uscita
+    g_builder.add_edge(START, "greeting")
+    g_builder.add_edge("emoji", END)
+
+    # edge condizionali: il nodo 'greeting' chiama next_node_after_greeting(state)
+    g_builder.add_conditional_edges(
+        "greeting",
+        next_node_after_greeting,
+        path_map={
+            "if add_emoji": "emoji",
+            "else": END,
+        },
+    )
+    return (g_builder,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     ## Compiling the graph
     Before we can execute a graph, we need to compile it
-    """
-    )
+    """)
     return
 
 
 @app.cell
-def _(graph):
-    compiled_graph = graph.compile()
+def _(g_builder):
+    compiled_graph = g_builder.compile()
     return (compiled_graph,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Visualize the graph""")
+    mo.md(r"""
+    ## Visualize the graph
+    """)
     return
 
 
@@ -179,7 +232,9 @@ def _(compiled_graph, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Let's test it""")
+    mo.md(r"""
+    ## Let's test it
+    """)
     return
 
 
@@ -197,7 +252,6 @@ def _(compiled_graph, mo, run_button):
     for user in tests:
         result = compiled_graph.invoke({"name_input": user})
         print(f"Input={user} -> {result.get('text')}")
-
     return
 
 

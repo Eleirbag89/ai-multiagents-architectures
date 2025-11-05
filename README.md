@@ -28,9 +28,9 @@ Poetry is the dependency manager used in this project. Follow the [official inst
 poetry install
 ```
 
-### 3. Setup Anthropic key
+### 3. Setup OpenAI key
 
-Copy the file .env.example as .env and put your key in the ANTHROPIC_API_KEY field
+Copy the file .env.example as .env and put your key in the OPENAI_API_KEY field
 
 ### 4. Launch the Notebooks
 Use Marimo to edit and run the notebooks:

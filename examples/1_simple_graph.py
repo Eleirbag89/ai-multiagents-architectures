@@ -1,97 +1,131 @@
 import marimo
 
-__generated_with = "0.13.11"
+__generated_with = "0.17.6"
 app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Simple Graph Example
     This is a simple example of a LangGraph that demonstrates how to create a graph with conditional edges and how to invoke it with different inputs.
 
-    The graph consists of two nodes: "_greeting_" and "_emoji_". 
+    The graph consists of two nodes: "_greeting_" and "_emoji_".
 
     The "_greeting_" node generates a greeting message based on the input name, and the "_emoji_" node appends an emoji to the text.
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Define the imports""")
+    mo.md(r"""
+    ## Define the imports
+    """)
     return
 
 
 @app.cell
 def _():
-    from langgraph.graph import Graph, START, END
-    return END, Graph, START
+    from langgraph.graph import StateGraph, START, END
+    from typing import TypedDict
+    return END, START, StateGraph, TypedDict
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(mo):
-    mo.md(r"""## Define the greeting node""")
-    return
-
-
-@app.function
-# Function to create the greeting
-# Inputs is the input of the compiled graph invoke, because it is the first node
-def greeting_node(inputs):
-    name_input = inputs.get("name_input")
-
-    greeting = f"Hello, {name_input}! Welcome to LangGraph."
-    return {"text": greeting}
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""## Define the emoji node""")
-    return
-
-
-@app.function
-# Function to append an emoji to the text
-# Inputs is the *output* of the previous node
-def emoji_node(inputs):
-    text = inputs.get("text", "")
-    return {"text": text + " 🚀"}
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-    ## Define the conditional edge to choose the next node to execute
-    If the input contains "_Gabriele_" we execute the _emoji_ node next, otherwise we terminate the graph execution in the _END_ node
-    """
-    )
-    return
-
-
-@app.function
-# Function to determine the next node based on the input
-def next_node_after_greeting(inputs):
-    # If the input contains "Gabriele", go to the "emoji" node
-    if "Gabriele" in inputs.get("text", ""):
-        return "if name is Gabriele"
-    # Otherwise, go to the END node
-    # END is a special node that indicates the end of the graph. If it's missing, the graph will not return anything.
-    return "else"
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""## Let's create the graph""")
+    mo.md(r"""
+    ## Define the State
+    """)
     return
 
 
 @app.cell
-def _(END, Graph, START):
-    graph = Graph()
+def _(TypedDict):
+    class State(TypedDict, total=False):
+        name_input: str
+        text: str
+    return (State,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Define the greeting node
+    """)
+    return
+
+
+@app.cell
+def _(State):
+    # Function to create the greeting
+    # Inputs is the input of the compiled graph invoke, because it is the first node
+    def greeting_node(state: State):
+        name_input = state.get("name_input")
+
+        greeting = f"Hello, {name_input}! Welcome to LangGraph."
+        return {"text": greeting}
+    return (greeting_node,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Define the emoji node
+    """)
+    return
+
+
+@app.cell
+def _(State):
+    # Function to append an emoji to the text
+    def emoji_node(state: State):
+        text = state.get("text", "")
+        return {"text": text + " 🚀"}
+    return (emoji_node,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Define the conditional edge to choose the next node to execute
+    If the input contains "_Gabriele_" we execute the _emoji_ node next, otherwise we terminate the graph execution in the _END_ node
+    """)
+    return
+
+
+@app.cell
+def _(State):
+    # Function to determine the next node based on the input
+    def next_node_after_greeting(state: State):
+        # If the input contains "Gabriele", go to the "emoji" node
+        if "Gabriele" in state.get("text", ""):
+            return "if name is Gabriele"
+        # Otherwise, go to the END node
+        # END is a special node that indicates the end of the graph. If it's missing, the graph will not return anything.
+        return "else"
+    return (next_node_after_greeting,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Let's create the graph
+    """)
+    return
+
+
+@app.cell
+def _(
+    END,
+    START,
+    State,
+    StateGraph,
+    emoji_node,
+    greeting_node,
+    next_node_after_greeting,
+):
+    graph = StateGraph(State)
 
     graph.add_node("greeting", greeting_node)
     graph.add_node("emoji", emoji_node)
@@ -111,12 +145,10 @@ def _(END, Graph, START):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Compiling the graph
     Before we can execute a graph, we need to compile it
-    """
-    )
+    """)
     return
 
 
@@ -128,7 +160,9 @@ def _(graph):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Visualize the graph""")
+    mo.md(r"""
+    ## Visualize the graph
+    """)
     return
 
 
@@ -140,7 +174,9 @@ def _(compiled_graph, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Let's test it""")
+    mo.md(r"""
+    ## Let's test it
+    """)
     return
 
 
@@ -151,7 +187,6 @@ def _(compiled_graph):
     for user in tests:
         result = compiled_graph.invoke({"name_input": user})
         print(f"Input={user} -> {result.get('text')}")
-
     return
 
 

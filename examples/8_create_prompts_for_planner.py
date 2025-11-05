@@ -1,18 +1,22 @@
 import marimo
 
-__generated_with = "0.13.11"
+__generated_with = "0.17.6"
 app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""# Register the prompts for the planner in MLFlow""")
+    mo.md(r"""
+    # Register the prompts for the planner in MLFlow
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Run MlFlow server and configure it""")
+    mo.md(r"""
+    ## Run MlFlow server and configure it
+    """)
     return
 
 
@@ -35,7 +39,6 @@ def _():
 
     import mlflow
     mlflow.set_tracking_uri("http://localhost:5000")
-
     return avvia_mlflow_server, mlflow
 
 
@@ -62,15 +65,11 @@ def _(mlflow):
         """
 
         # Register evaluator prompt
-        prompt = mlflow.register_prompt(
+        prompt = mlflow.genai.register_prompt(
             name="evaluator_prompt",
             template=evaluator_prompt,
             # Optional: Provide a commit message to describe the changes
             commit_message="Initial commit",
-            # Optional: Specify any additional metadata about the prompt version
-            version_metadata={
-                "author": "pippo@topolin.ia",
-            },
             # Optional: Set tags applies to the prompt (across versions)
             tags={
                 "task": "planner",
@@ -85,15 +84,11 @@ def _(mlflow):
         Sei un esecutore di task con accesso a un tool per effettuare una ricerca sul web e uno per inviare una mail. Se non sai quale sia il destinatario non inviare la mail, limitati a rispondere con il body e il subject
         """
 
-        prompt = mlflow.register_prompt(
+        prompt = mlflow.genai.register_prompt(
             name="executor_sys_prompt",
             template=executor_sys_prompt,
             # Optional: Provide a commit message to describe the changes
             commit_message="Initial commit",
-            # Optional: Specify any additional metadata about the prompt version
-            version_metadata={
-                "author": "pippo@topolin.ia",
-            },
             # Optional: Set tags applies to the prompt (across versions)
             tags={
                 "task": "planner",
@@ -113,15 +108,11 @@ def _(mlflow):
 
         Il tuo compito è di eseguire ESCLUSIVAMENTE con 1 tool e ESCLUSIVAMENTE questo task: '{{task}}'"""
 
-        prompt = mlflow.register_prompt(
+        prompt = mlflow.genai.register_prompt(
             name="executor_user_prompt",
             template=executor_user_prompt,
             # Optional: Provide a commit message to describe the changes
             commit_message="Initial commit",
-            # Optional: Specify any additional metadata about the prompt version
-            version_metadata={
-                "author": "pippo@topolin.ia",
-            },
             # Optional: Set tags applies to the prompt (across versions)
             tags={
                 "task": "planner",
@@ -139,15 +130,11 @@ def _(mlflow):
         Riporta nello step del piano le informazioni fornite dall'utente che possano essere utili alla sua esecuzione con successo, considerando che l'executor non ha accesso alla query dell'utente. In particolare, quando chiedi di inviare una mail, riporta sempre l'indirizzo del destinatario.
         """
 
-        prompt = mlflow.register_prompt(
+        prompt = mlflow.genai.register_prompt(
             name="plan_prompt",
             template=plan_prompt,
             # Optional: Provide a commit message to describe the changes
             commit_message="Initial commit",
-            # Optional: Specify any additional metadata about the prompt version
-            version_metadata={
-                "author": "pippo@topolin.ia",
-            },
             # Optional: Set tags applies to the prompt (across versions)
             tags={
                 "task": "planner",

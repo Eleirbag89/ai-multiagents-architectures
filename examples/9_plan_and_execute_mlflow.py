@@ -1,24 +1,28 @@
 import marimo
 
-__generated_with = "0.13.11"
+__generated_with = "0.17.6"
 app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""# Plan and execute architecture Example with MLFlow tracing and prompts""")
+    mo.md(r"""
+    # Plan and execute architecture Example with MLFlow tracing and prompts
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Define the imports""")
+    mo.md(r"""
+    ## Define the imports
+    """)
     return
 
 
 @app.cell
 def _():
-    from langchain_anthropic import ChatAnthropic
+    from langchain_openai import ChatOpenAI
     from langgraph.prebuilt import create_react_agent
     from langgraph.graph import StateGraph, END
     from langchain_community.tools import DuckDuckGoSearchResults, DuckDuckGoSearchRun, Tool
@@ -30,7 +34,7 @@ def _():
     return (
         Annotated,
         BaseModel,
-        ChatAnthropic,
+        ChatOpenAI,
         DuckDuckGoSearchAPIWrapper,
         DuckDuckGoSearchRun,
         END,
@@ -49,7 +53,9 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Run MlFlow server and enable tracing""")
+    mo.md(r"""
+    ## Run MlFlow server and enable tracing
+    """)
     return
 
 
@@ -76,12 +82,15 @@ def _():
     mlflow.set_tracking_uri("http://localhost:5000")
     mlflow.config.enable_async_logging()
     mlflow.langchain.autolog(exclusive=False)
+    mlflow.set_experiment("planner")
     return (mlflow,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Setup Anthropic model""")
+    mo.md(r"""
+    ## Setup LLM model
+    """)
     return
 
 
@@ -89,27 +98,25 @@ def _(mo):
 def _():
     import getpass
     import os
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        os.environ["ANTHROPIC_API_KEY"] = getpass.getpass()
+    if not os.environ.get("OPENAI_API_KEY"):
+        os.environ["OPENAI_API_KEY"] = getpass.getpass()
     return
 
 
 @app.cell
-def _(ChatAnthropic):
-    model = ChatAnthropic(model_name="claude-3-5-haiku-latest")
+def _(ChatOpenAI):
+    model = ChatOpenAI(model_name="gpt-5-nano")
     return (model,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Define the support classes
     - Plan contains a list of steps. It's the output type of the Planner Agent
     - PlanExecState contains the state of the system: user request, executed and next steps and the final answer
     - EvalResult models the reponse of the evaluator agent. it's the output type of the Eval agent
-    """
-    )
+    """)
     return
 
 
@@ -142,7 +149,9 @@ def _(BaseModel, Optional):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Define planner agent""")
+    mo.md(r"""
+    ## Define planner agent
+    """)
     return
 
 
@@ -159,13 +168,17 @@ def _(Plan, PlanExecState, model):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Executor""")
+    mo.md(r"""
+    ## Executor
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Define the search tool""")
+    mo.md(r"""
+    ### Define the search tool
+    """)
     return
 
 
@@ -184,7 +197,9 @@ def _(DuckDuckGoSearchAPIWrapper, DuckDuckGoSearchRun, Tool):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Define a fake tool to sens emails""")
+    mo.md(r"""
+    ### Define a fake tool to sens emails
+    """)
     return
 
 
@@ -210,7 +225,9 @@ def _(tool):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Define executor agent""")
+    mo.md(r"""
+    ### Define executor agent
+    """)
     return
 
 
@@ -223,7 +240,7 @@ def _(
     search_tool,
     send_email,
 ):
-    executor_sys_prompt = mlflow.load_prompt("prompts:/executor_sys_prompt/1")
+    executor_sys_prompt = mlflow.genai.load_prompt("prompts:/executor_sys_prompt/1")
     executor_agent = create_react_agent(
         model=model,
         tools=[search_tool, send_email],
@@ -233,7 +250,7 @@ def _(
         debug=True,
     )
 
-    executor_user_prompt = mlflow.load_prompt("prompts:/executor_user_prompt/1")
+    executor_user_prompt = mlflow.genai.load_prompt("prompts:/executor_user_prompt/1")
     def exec_step(state: PlanExecState) -> dict:
 
         task = state["plan"].pop(0)
@@ -248,7 +265,9 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Evaluator""")
+    mo.md(r"""
+    ## Evaluator
+    """)
     return
 
 
@@ -272,7 +291,9 @@ def _(EvalResult, PlanExecState, mlflow, model):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Finalize""")
+    mo.md(r"""
+    ## Finalize
+    """)
     return
 
 
@@ -282,13 +303,14 @@ def _(PlanExecState):
         lines = [f"{i+1}. {task}: {output}" for i, (task, output) in enumerate(state["past_steps"])]
         final = "\n".join(lines)
         return {"response": final}
-
     return (finalize,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Build the graph""")
+    mo.md(r"""
+    ## Build the graph
+    """)
     return
 
 
@@ -324,13 +346,14 @@ def _(
     wf.add_edge("finalize", END)
 
     app = wf.compile()
-
     return (app,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""##Visualize the graph""")
+    mo.md(r"""
+    ##Visualize the graph
+    """)
     return
 
 
@@ -342,12 +365,10 @@ def _(app, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Last touches
     Let's define an helper function to invoke the planner and execute workflow
-    """
-    )
+    """)
     return
 
 
@@ -363,7 +384,7 @@ def _(List, Optional, PlanExecState, Tool, app, mlflow):
                 "Li userà in automatico. Non è necessario nominarli esplicitamente.\n"
             )
 
-        plan_prompt = mlflow.load_prompt("prompts:/plan_prompt/1").format(
+        plan_prompt = mlflow.genai.load_prompt("prompts:/plan_prompt/1").format(
             user_query=user_query, tools_prompt=tools_prompt
         )
 
@@ -377,7 +398,6 @@ def _(List, Optional, PlanExecState, Tool, app, mlflow):
         }
 
         return app.invoke(initial_state)
-
     return (run_agent,)
 
 

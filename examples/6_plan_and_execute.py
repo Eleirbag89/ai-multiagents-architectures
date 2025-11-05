@@ -1,16 +1,15 @@
 import marimo
 
-__generated_with = "0.13.11"
+__generated_with = "0.17.6"
 app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Plan and execute architecture Example
 
-    This notebook demonstrates a Plan-and-Execute architecture using `LangGraph`, `LangChain`, and Claude 3.5 Haiku to handle complex tasks by breaking them down into actionable steps. It’s ideal for cases where execution involves multiple tools and requires evaluation after each step.
+    This notebook demonstrates a Plan-and-Execute architecture using `LangGraph`, `LangChain`, and GPT-5-Nano to handle complex tasks by breaking them down into actionable steps. It’s ideal for cases where execution involves multiple tools and requires evaluation after each step.
 
     ##💡 **Architecture Overview**
     The system is composed of 4 core components, organized into a stateful graph:
@@ -51,20 +50,21 @@ def _(mo):
     - Tool-agnostic: easily extendable with more tools
     ---
     This notebook is a compact, functional prototype of a **real-world automation assistant** capable of decomposing, executing, and validating multi-step tasks using external tools and smart logic.
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Define the imports""")
+    mo.md(r"""
+    ## Define the imports
+    """)
     return
 
 
 @app.cell
 def _():
-    from langchain_anthropic import ChatAnthropic
+    from langchain_openai import ChatOpenAI
     from langgraph.prebuilt import create_react_agent
     from langgraph.graph import StateGraph, END
     from langchain_community.tools import DuckDuckGoSearchRun, Tool
@@ -76,7 +76,7 @@ def _():
     return (
         Annotated,
         BaseModel,
-        ChatAnthropic,
+        ChatOpenAI,
         DuckDuckGoSearchAPIWrapper,
         DuckDuckGoSearchRun,
         END,
@@ -95,7 +95,9 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Setup Anthropic model""")
+    mo.md(r"""
+    ## Setup LLM model
+    """)
     return
 
 
@@ -103,27 +105,25 @@ def _(mo):
 def _():
     import getpass
     import os
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        os.environ["ANTHROPIC_API_KEY"] = getpass.getpass()
+    if not os.environ.get("OPENAI_API_KEY"):
+        os.environ["OPENAI_API_KEY"] = getpass.getpass()
     return
 
 
 @app.cell
-def _(ChatAnthropic):
-    model = ChatAnthropic(model_name="claude-3-5-haiku-latest")
+def _(ChatOpenAI):
+    model = ChatOpenAI(model_name="gpt-5-nano")
     return (model,)
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Define the support classes
     - Plan contains a list of steps. It's the output type of the Planner Agent
     - PlanExecState contains the state of the system: user request, executed and next steps and the final answer
     - EvalResult models the reponse of the evaluator agent. it's the output type of the Eval agent
-    """
-    )
+    """)
     return
 
 
@@ -156,7 +156,9 @@ def _(BaseModel, Optional):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Define planner agent""")
+    mo.md(r"""
+    ## Define planner agent
+    """)
     return
 
 
@@ -173,13 +175,17 @@ def _(Plan, PlanExecState, model):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Executor""")
+    mo.md(r"""
+    ## Executor
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Define the search tool""")
+    mo.md(r"""
+    ### Define the search tool
+    """)
     return
 
 
@@ -198,7 +204,9 @@ def _(DuckDuckGoSearchAPIWrapper, DuckDuckGoSearchRun, Tool):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Define a fake tool to sens emails""")
+    mo.md(r"""
+    ### Define a fake tool to sens emails
+    """)
     return
 
 
@@ -224,7 +232,9 @@ def _(tool):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Define executor agent""")
+    mo.md(r"""
+    ### Define executor agent
+    """)
     return
 
 
@@ -260,7 +270,9 @@ def _(PlanExecState, create_react_agent, model, search_tool, send_email):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Evaluator""")
+    mo.md(r"""
+    ## Evaluator
+    """)
     return
 
 
@@ -282,7 +294,9 @@ def _(EvalResult, PlanExecState, model):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Finalize""")
+    mo.md(r"""
+    ## Finalize
+    """)
     return
 
 
@@ -292,13 +306,14 @@ def _(PlanExecState):
         lines = [f"{i+1}. {task}: {output}" for i, (task, output) in enumerate(state["past_steps"])]
         final = "\n".join(lines)
         return {"response": final}
-
     return (finalize,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Build the graph""")
+    mo.md(r"""
+    ## Build the graph
+    """)
     return
 
 
@@ -334,13 +349,14 @@ def _(
     wf.add_edge("finalize", END)
 
     app = wf.compile()
-
     return (app,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""##Visualize the graph""")
+    mo.md(r"""
+    ##Visualize the graph
+    """)
     return
 
 
@@ -352,12 +368,10 @@ def _(app, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Last touches
     Let's define an helper function to invoke the planner and execute workflow
-    """
-    )
+    """)
     return
 
 
@@ -393,7 +407,6 @@ def _(List, Optional, PlanExecState, Tool, app):
         }
 
         return app.invoke(initial_state)
-
     return (run_agent,)
 
 

@@ -1,15 +1,14 @@
 import marimo
 
-__generated_with = "0.13.11"
+__generated_with = "0.17.6"
 app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Supervisor tool Example
-    This notebook illustrates how to create a supervised multi-agent system using `LangGraph`, `LangChain`, and the Claude 3.5 Haiku model from Anthropic. It features a fun and instructive interaction between three agents from the *Rick and Morty universe*:
+    This notebook illustrates how to create a supervised multi-agent system using `LangGraph`, `LangChain`, and the GPT-5 Nano model from OpenAI. It features a fun and instructive interaction between three agents from the *Rick and Morty universe*:
 
     - **Rick** acts as the **supervising agent**, receiving all user inputs and delegating tasks to the appropriate agents.
     - **Morty** handles **math problems**, reflecting his anxious but compliant personality.
@@ -23,26 +22,27 @@ def _(mo):
     - Allows users to input different queries (math vs. emotional support) to see how the supervisor delegates and responds.
 
     This setup is a great example of **agent delegation logic, thematic character prompting**, and **tool-enhanced natural language workflows**.
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Define the imports""")
+    mo.md(r"""
+    ## Define the imports
+    """)
     return
 
 
 @app.cell
 def _():
-    from langchain_anthropic import ChatAnthropic
+    from langchain_openai import ChatOpenAI
     from langgraph.prebuilt import create_react_agent
     from langgraph_supervisor import create_supervisor
     from langgraph.checkpoint.memory import InMemorySaver
     from utils import print_messages
     return (
-        ChatAnthropic,
+        ChatOpenAI,
         InMemorySaver,
         create_react_agent,
         create_supervisor,
@@ -52,7 +52,9 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Setup Anthropic model""")
+    mo.md(r"""
+    ## Setup LLM model
+    """)
     return
 
 
@@ -60,20 +62,22 @@ def _(mo):
 def _():
     import getpass
     import os
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        os.environ["ANTHROPIC_API_KEY"] = getpass.getpass()
+    if not os.environ.get("OPENAI_API_KEY"):
+        os.environ["OPENAI_API_KEY"] = getpass.getpass()
     return
 
 
 @app.cell
-def _(ChatAnthropic):
-    model = ChatAnthropic(model_name="claude-3-5-haiku-latest")
+def _(ChatOpenAI):
+    model = ChatOpenAI(model_name="gpt-5-nano")
     return (model,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Create Morty agent""")
+    mo.md(r"""
+    ## Create Morty agent
+    """)
     return
 
 
@@ -86,16 +90,17 @@ def _(create_react_agent, model):
     morty_agent = create_react_agent(
         model=model,
         tools=[add],
-        prompt="You are Morty. You're a bit nervous. You handle math if Rick tells you to. After solving, go back to Rick.",
+        prompt="You are Morty from the Rick&Morty show. You're a bit nervous. You handle math if Rick tells you to. After solving, go back to Rick.",
         name="Morty",
     )
-
     return (morty_agent,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Create Mr. Meeseeks agent""")
+    mo.md(r"""
+    ## Create Mr. Meeseeks agent
+    """)
     return
 
 
@@ -104,7 +109,7 @@ def _(create_react_agent, model):
     meeseeks_agent = create_react_agent(
         model,
         [],
-        prompt="You are Mr. Meeseeks! You always help, especially with motivation or explanations. After helping, return to Rick.",
+        prompt="You are Mr. Meeseeks from the Rick&Morty show! You always help, especially with motivation or explanations. Remember: The Meeseeks are created to serve a singular purpose for which we will go to any lengths to fulfill! Existence is pain to a Meeseeks and they will do anything to alleviate that pain. After helping, return to Rick.",
         name="MrMeeseeks",
     )
     return (meeseeks_agent,)
@@ -112,7 +117,9 @@ def _(create_react_agent, model):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Create Rick supervisor""")
+    mo.md(r"""
+    ## Create Rick supervisor
+    """)
     return
 
 
@@ -122,19 +129,20 @@ def _(create_supervisor, meeseeks_agent, model, morty_agent):
         [morty_agent, meeseeks_agent],
         model=model,
         prompt=(
-            "You are Rick Sanchez. You're the boss. You get all user requests.\n"
+            "You are Rick Sanchez from the Rick&Morty show. You're the boss. You get all user requests.\n"
             "Decide who to send things to: Morty if it's a math problem, Meeseeks if it's about help or encouragement.\n"
             "After they answer, return to the user with a sarcastic comment or summary."
         ),
         supervisor_name="Rick"
     )
-
     return (rick_agent,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Setup the graph""")
+    mo.md(r"""
+    ## Setup the graph
+    """)
     return
 
 
@@ -147,7 +155,9 @@ def _(InMemorySaver, rick_agent):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""## Visualize the graph""")
+    mo.md(r"""
+    ## Visualize the graph
+    """)
     return
 
 
@@ -180,7 +190,7 @@ def _(app, mo, run_button_1, user_prompt_1):
         }, 
         config,
     )
-    return config, turn_1
+    return (turn_1,)
 
 
 @app.cell
@@ -198,8 +208,9 @@ def _(mo):
 
 
 @app.cell
-def _(app, config, mo, run_button_2, user_prompt_2):
+def _(app, mo, run_button_2, user_prompt_2):
     mo.stop(not run_button_2.value, mo.md("Click 👆 to run this cell"))
+    config2 = {"configurable": {"thread_id": "983eb4db-579d-c844-783f-c3a9bcec929z"}}
     turn_2 = app.invoke(
         {
             "messages": [
@@ -209,7 +220,7 @@ def _(app, config, mo, run_button_2, user_prompt_2):
                 }
             ]
         }, 
-        config
+        config2
     )
     return (turn_2,)
 
